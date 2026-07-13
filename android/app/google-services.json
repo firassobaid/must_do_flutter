@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "745004706831",
+    "project_id": "must-do-tasks",
+    "storage_bucket": "must-do-tasks.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:745004706831:android:883d1fe37dd2e06dc6477a",
+        "android_client_info": {
+          "package_name": "com.fo.must_do"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPIJv-5LeIedXahi7cILgqPXbouBNgrWI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
