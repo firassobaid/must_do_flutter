@@ -22,7 +22,18 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Space'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/branding/logo.png',
+              width: 32,
+              height: 32,
+            ),
+            const SizedBox(width: AppSpacing.s),
+            const Text('My Space'),
+          ],
+        ),
         actions: [
           Consumer(
             builder: (context, ref, child) {
@@ -74,9 +85,9 @@ class HomeScreen extends ConsumerWidget {
                 return ReorderableListView.builder(
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: lists.length,
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (fromIndex, toIndex) {
                     HapticsUtil.medium();
-                    ref.read(taskListControllerProvider.notifier).reorder(oldIndex, newIndex);
+                    ref.read(taskListControllerProvider.notifier).reorder(fromIndex, toIndex);
                   },
                   proxyDecorator: (child, index, animation) {
                     return AnimatedBuilder(
@@ -107,7 +118,15 @@ class HomeScreen extends ConsumerWidget {
                         HapticsUtil.light();
                         context.push('/list/${list.id}');
                       },
-                    ).animate(key: ValueKey(list.id)).fadeIn(delay: (index * 50).ms).slideX(begin: 0.05, end: 0);
+                    )
+                        // Stagger via Animate.delay (not the effect's delay): the
+                        // effect delay is part of the animation's total duration, and
+                        // flutter_animate replays from scratch whenever that duration
+                        // changes — which happens for every shifted item after a
+                        // reorder, flashing the whole list.
+                        .animate(key: ValueKey(list.id), delay: (index * 50).ms)
+                        .fadeIn()
+                        .slideX(begin: 0.05, end: 0);
                   },
                 );
               },

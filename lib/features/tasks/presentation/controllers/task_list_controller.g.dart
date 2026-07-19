@@ -169,7 +169,7 @@ class _TaskListProgressProviderElement
 }
 
 String _$taskListControllerHash() =>
-    r'4c6e5e04855efa382b86738c91933635405dced3';
+    r'2e848c7d46b5942379ce88e666f8e5d3b93e61f7';
 
 /// See also [TaskListController].
 @ProviderFor(TaskListController)

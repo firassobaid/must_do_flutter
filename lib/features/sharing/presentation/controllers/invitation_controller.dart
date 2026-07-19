@@ -20,7 +20,7 @@ class InvitationController extends _$InvitationController {
     
     if (user == null || user.email == null) return Stream.value([]);
     
-    return ref.watch(sharingRepositoryProvider).watchPendingInvitations(user.email!);
+    return ref.watch(sharingRepositoryProvider).watchPendingInvitations(user.email!.toLowerCase());
   }
 
   Future<void> acceptInvitation(InvitationModel invitation) async {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../data/models/task_model.dart';
 import '../controllers/task_controller.dart';
 import '../controllers/task_list_controller.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -31,6 +33,7 @@ class TaskListDetailScreen extends ConsumerWidget {
         title: Text(listTitle),
         actions: [
           IconButton(
+            tooltip: 'Invite collaborator',
             onPressed: () => showDialog(
               context: context,
               builder: (context) => ShareListDialog(
@@ -38,7 +41,18 @@ class TaskListDetailScreen extends ConsumerWidget {
                 listTitle: listTitle,
               ),
             ),
-            icon: const Icon(Icons.share_outlined),
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+          ),
+          Builder(
+            builder: (iconContext) => IconButton(
+              tooltip: 'Share',
+              onPressed: () => _shareList(
+                iconContext,
+                listTitle,
+                tasksAsync.value ?? [],
+              ),
+              icon: const Icon(Icons.share_outlined),
+            ),
           ),
         ],
       ),
@@ -84,6 +98,28 @@ class TaskListDetailScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  /// Opens the platform share sheet with the list rendered as text.
+  void _shareList(BuildContext context, String listTitle, List<TaskModel> tasks) {
+    final buffer = StringBuffer('📝 $listTitle\n\n');
+    if (tasks.isEmpty) {
+      buffer.writeln('(no tasks yet)');
+    } else {
+      for (final task in tasks) {
+        buffer.writeln('${task.isDone ? '✅' : '⬜'} ${task.title}');
+      }
+    }
+    buffer.write('\nShared from Must Do');
+
+    // Anchor for the iPad share popover.
+    final box = context.findRenderObject() as RenderBox?;
+    SharePlus.instance.share(ShareParams(
+      text: buffer.toString(),
+      subject: listTitle,
+      sharePositionOrigin:
+          box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+    ));
   }
 
   void _showAddTaskDialog(BuildContext context, WidgetRef ref) {

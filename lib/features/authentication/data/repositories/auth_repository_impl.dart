@@ -129,6 +129,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Stream<UserModel?> watchUserDoc(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map(
+          (doc) => doc.exists ? UserModel.fromJson(doc.data()!) : null,
+        );
+  }
+
+  @override
   Future<void> createUserDoc(UserModel user) async {
     await _firestore.collection('users').doc(user.uid).set(user.toJson());
   }

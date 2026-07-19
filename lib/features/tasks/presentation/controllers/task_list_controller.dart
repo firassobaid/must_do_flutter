@@ -58,17 +58,15 @@ class TaskListController extends _$TaskListController {
     await ref.read(taskRepositoryProvider).createTaskList(newList);
   }
 
-  Future<void> reorder(int oldIndex, int newIndex) async {
+  /// [fromIndex]/[toIndex] follow onReorderItem semantics: [toIndex] is
+  /// already adjusted for the removal of the item at [fromIndex].
+  Future<void> reorder(int fromIndex, int toIndex) async {
     final lists = state.value;
     if (lists == null) return;
 
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    
     final updatedLists = List<TaskListModel>.from(lists);
-    final item = updatedLists.removeAt(oldIndex);
-    updatedLists.insert(newIndex, item);
+    final item = updatedLists.removeAt(fromIndex);
+    updatedLists.insert(toIndex, item);
 
     // 1. Set reordering flag to block stale stream updates
     _isReordering = true;

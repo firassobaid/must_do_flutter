@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// Security rules for Must Do.
+// Data model:
+//   users/{uid}                      - user profiles
+//   task_lists/{listId}              - lists (ownerId field)
+//   task_lists/{listId}/tasks/{id}   - tasks in a list
+//   memberships/{uid}_{listId}       - membership join docs (userId, listId, role)
+//   invitations/{inviteId}           - share invitations (senderId, receiverEmail, status)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(listId) {
+      return exists(/databases/$(database)/documents/memberships/$(request.auth.uid + '_' + listId));
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /memberships/{membershipId} {
+      // Queried with where('userId', '==', uid), so read must be provable
+      // from the query filter.
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /task_lists/{listId} {
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read, update: if signedIn() && isMember(listId);
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /tasks/{taskId} {
+        allow read, write: if signedIn() && isMember(listId);
+      }
+    }
+
+    match /invitations/{inviteId} {
+      allow read: if signedIn() &&
+          (resource.data.receiverEmail == request.auth.token.email ||
+           resource.data.senderId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.senderId == request.auth.uid;
+      // Receiver accepts/declines their own invitation.
+      allow update: if signedIn() && resource.data.receiverEmail == request.auth.token.email;
+    }
+  }
+}

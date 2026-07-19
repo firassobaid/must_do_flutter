@@ -25,7 +25,9 @@ class ShareController extends _$ShareController {
         id: const Uuid().v4(),
         senderId: user.uid,
         senderName: user.displayName ?? 'Someone',
-        receiverEmail: receiverEmail,
+        // Normalized so the receiver's query (also lowercased) matches
+        // regardless of how the sender typed it.
+        receiverEmail: receiverEmail.trim().toLowerCase(),
         listId: listId,
         listTitle: listTitle,
         createdAt: DateTime.now(),

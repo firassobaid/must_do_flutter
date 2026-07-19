@@ -13,6 +13,8 @@ abstract class AuthRepository {
   Future<void> signOut();
   
   Future<UserModel?> getCurrentUserDoc(String uid);
+
+  Stream<UserModel?> watchUserDoc(String uid);
   
   Future<void> createUserDoc(UserModel user);
 
