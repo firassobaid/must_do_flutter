@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/models/task_model.dart';
 import '../controllers/task_controller.dart';
 import '../controllers/task_list_controller.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/common_widgets/sync_indicator.dart';
 import '../../../../core/utils/haptics_util.dart';
 import '../widgets/task_list_item.dart';
@@ -28,7 +27,7 @@ class TaskListDetailScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(listTitle),
         actions: [
@@ -93,8 +92,6 @@ class TaskListDetailScreen extends ConsumerWidget {
           HapticsUtil.medium();
           _showAddTaskDialog(context, ref);
         },
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );

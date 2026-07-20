@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/haptics_util.dart';
 import '../../data/models/task_model.dart';
 
@@ -20,7 +19,7 @@ class TaskListItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
@@ -33,14 +32,16 @@ class TaskListItem extends StatelessWidget {
               onToggle(val);
             },
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            activeColor: AppColors.primary,
+            activeColor: Theme.of(context).colorScheme.primary,
           ),
         ),
         title: Text(
           task.title,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 decoration: task.isDone ? TextDecoration.lineThrough : null,
-                color: task.isDone ? AppColors.textSecondary : AppColors.textPrimary,
+                color: task.isDone 
+                    ? Theme.of(context).colorScheme.onSurfaceVariant 
+                    : Theme.of(context).colorScheme.onSurface,
               ),
         ),
         subtitle: task.description != null && task.description!.isNotEmpty
@@ -48,11 +49,17 @@ class TaskListItem extends StatelessWidget {
                 task.description!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               )
             : null,
         trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.textSecondary),
+          icon: Icon(
+            Icons.delete_outline, 
+            size: 20, 
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           onPressed: () {
             HapticsUtil.medium();
             onDelete();

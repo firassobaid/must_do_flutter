@@ -7,6 +7,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/tasks/presentation/screens/home_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_detail_screen.dart';
 import '../../features/sharing/presentation/screens/invitations_screen.dart';
+import '../../features/onboarding/presentation/screens/splash_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -15,10 +16,15 @@ GoRouter appRouter(AppRouterRef ref) {
   final authState = ref.watch(authStateChangesProvider);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     redirect: (context, state) {
       final isLoggedIn = authState.value != null;
-      final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final matchedLocation = state.matchedLocation;
+
+      // Allow splash screen to finish
+      if (matchedLocation == '/splash') return null;
+
+      final isAuthRoute = matchedLocation == '/login' || matchedLocation == '/register';
 
       if (!isLoggedIn && !isAuthRoute) return '/login';
       if (isLoggedIn && isAuthRoute) return '/';
@@ -29,6 +35,10 @@ GoRouter appRouter(AppRouterRef ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/login',
