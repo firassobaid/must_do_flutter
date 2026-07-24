@@ -59,30 +59,57 @@ class TaskListDetailScreen extends ConsumerWidget {
         children: [
           const SyncIndicator(),
           Expanded(
-            child: tasksAsync.when(
-              data: (tasks) {
-                if (tasks.isEmpty) {
-                  return const Center(child: Text('No tasks in this list.'));
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = tasks[index];
-                    return TaskListItem(
-                      task: task,
-                      onToggle: (_) => ref
-                          .read(taskControllerProvider(listId).notifier)
-                          .toggleTask(listId, task),
-                      onDelete: () => ref
-                          .read(taskControllerProvider(listId).notifier)
-                          .deleteTask(listId, task.id),
-                    ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: 0.1, end: 0);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+            child: RefreshIndicator(
+              onRefresh: () => ref.refresh(taskControllerProvider(listId).future),
+              child: tasksAsync.when(
+                data: (tasks) {
+                  if (tasks.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: const Center(child: Text('No tasks in this list.')),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
+                      return TaskListItem(
+                        task: task,
+                        onToggle: (_) => ref
+                            .read(taskControllerProvider(listId).notifier)
+                            .toggleTask(listId, task),
+                        onDelete: () => ref
+                            .read(taskControllerProvider(listId).notifier)
+                            .deleteTask(listId, task.id),
+                      ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: 0.1, end: 0);
+                    },
+                  );
+                },
+                loading: () => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                ),
+                error: (err, stack) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      child: Center(child: Text('Error: $err')),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

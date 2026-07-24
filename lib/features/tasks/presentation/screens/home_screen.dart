@@ -77,61 +77,80 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: taskListsAsync.when(
-              data: (lists) {
-                if (lists.isEmpty) {
-                  return _buildEmptyState(context);
-                }
-                return ReorderableListView.builder(
-                  padding: const EdgeInsets.only(bottom: 100),
-                  itemCount: lists.length,
-                  onReorderItem: (fromIndex, toIndex) {
-                    HapticsUtil.medium();
-                    ref.read(taskListControllerProvider.notifier).reorder(fromIndex, toIndex);
-                  },
-                  proxyDecorator: (child, index, animation) {
-                    return AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        final animValue = Curves.easeInOut.transform(animation.value);
-                        final elevation = lerpDouble(0, 8, animValue)!;
-                        final scale = lerpDouble(1, 1.02, animValue)!;
-                        
-                        return Material(
-                          elevation: elevation,
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(24),
-                          child: Transform.scale(
-                            scale: scale,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: child,
-                    );
-                  },
-                  itemBuilder: (context, index) {
-                    final list = lists[index];
-                    return TaskListCard(
-                      list: list,
-                      onTap: () {
-                        HapticsUtil.light();
-                        context.push('/list/${list.id}');
-                      },
-                    )
-                        // Stagger via Animate.delay (not the effect's delay): the
-                        // effect delay is part of the animation's total duration, and
-                        // flutter_animate replays from scratch whenever that duration
-                        // changes — which happens for every shifted item after a
-                        // reorder, flashing the whole list.
-                        .animate(key: ValueKey(list.id), delay: (index * 50).ms)
-                        .fadeIn()
-                        .slideX(begin: 0.05, end: 0);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+            child: RefreshIndicator(
+              onRefresh: () => ref.refresh(taskListControllerProvider.future),
+              child: taskListsAsync.when(
+                data: (lists) {
+                  if (lists.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return ReorderableListView.builder(
+                    padding: const EdgeInsets.only(bottom: 100),
+                    itemCount: lists.length,
+                    onReorderItem: (fromIndex, toIndex) {
+                      HapticsUtil.medium();
+                      ref.read(taskListControllerProvider.notifier).reorder(fromIndex, toIndex);
+                    },
+                    proxyDecorator: (child, index, animation) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) {
+                          final animValue = Curves.easeInOut.transform(animation.value);
+                          final elevation = lerpDouble(0, 8, animValue)!;
+                          final scale = lerpDouble(1, 1.02, animValue)!;
+                          
+                          return Material(
+                            elevation: elevation,
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(24),
+                            child: Transform.scale(
+                              scale: scale,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                    itemBuilder: (context, index) {
+                      final list = lists[index];
+                      return TaskListCard(
+                        list: list,
+                        onTap: () {
+                          HapticsUtil.light();
+                          context.push('/list/${list.id}');
+                        },
+                      )
+                          // Stagger via Animate.delay (not the effect's delay): the
+                          // effect delay is part of the animation's total duration, and
+                          // flutter_animate replays from scratch whenever that duration
+                          // changes — which happens for every shifted item after a
+                          // reorder, flashing the whole list.
+                          .animate(key: ValueKey(list.id), delay: (index * 50).ms)
+                          .fadeIn()
+                          .slideX(begin: 0.05, end: 0);
+                    },
+                  );
+                },
+                loading: () => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                  ],
+                ),
+                error: (err, stack) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: Center(child: Text('Error: $err')),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -148,26 +167,34 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.task_alt,
-            size: 100,
-            color: AppColors.primary.withValues(alpha: 0.2),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No task lists yet.',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.textSecondary,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.task_alt,
+                  size: 100,
+                  color: AppColors.primary.withValues(alpha: 0.2),
                 ),
+                const SizedBox(height: 24),
+                Text(
+                  'No task lists yet.',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                const Text('Tap "+" to create your first one.'),
+              ],
+            ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
           ),
-          const SizedBox(height: 8),
-          const Text('Tap "+" to create your first one.'),
-        ],
-      ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
+        ),
+      ],
     );
   }
 
