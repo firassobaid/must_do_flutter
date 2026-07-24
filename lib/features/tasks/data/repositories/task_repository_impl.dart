@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../models/task_list_model.dart';
@@ -11,29 +12,49 @@ class TaskRepositoryImpl implements TaskRepository {
 
   @override
   Stream<List<TaskListModel>> watchTaskLists(String userId) {
-    // We query the memberships collection to find which lists the user belongs to
-    return _firestore
+    final controller = StreamController<List<TaskListModel>>();
+    StreamSubscription? listsSubscription;
+
+    final membershipSubscription = _firestore
         .collection('memberships')
         .where('userId', isEqualTo: userId)
         .snapshots()
-        .asyncMap((snapshot) async {
-      final listIds = snapshot.docs.map((doc) => doc.data()['listId'] as String).toList();
-      
-      if (listIds.isEmpty) return [];
+        .listen((membershipSnapshot) {
+      // Cancel previous list listener whenever membership changes
+      listsSubscription?.cancel();
 
-      // Fetch the actual task list documents
-      // Note: Firestore 'in' queries are limited to 30 items. 
-      // For a premium app, a user having >30 lists is possible, but we'll start here.
-      final listsSnapshot = await _firestore
+      final listIds = membershipSnapshot.docs
+          .map((doc) => doc.data()['listId'] as String)
+          .toList();
+
+      if (listIds.isEmpty) {
+        controller.add([]);
+        return;
+      }
+
+      // Start a new real-time listener for the actual list content
+      listsSubscription = _firestore
           .collection('task_lists')
           .where(FieldPath.documentId, whereIn: listIds)
-          .get();
-
-      return listsSnapshot.docs
-          .map((doc) => TaskListModel.fromJson(doc.data()))
-          .toList()
-        ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+          .snapshots()
+          .listen((listsSnapshot) {
+        final lists = listsSnapshot.docs
+            .map((doc) => TaskListModel.fromJson(doc.data()))
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        
+        if (!controller.isClosed) {
+          controller.add(lists);
+        }
+      });
     });
+
+    controller.onCancel = () {
+      membershipSubscription.cancel();
+      listsSubscription?.cancel();
+    };
+
+    return controller.stream;
   }
 
   @override
@@ -76,10 +97,16 @@ class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
-  Future<void> deleteTaskList(String listId) async {
-    // Note: In production, you'd use a Cloud Function to clean up sub-collections and memberships.
-    // For now, we delete the main document.
-    await _firestore.collection('task_lists').doc(listId).delete();
+  Future<void> deleteTaskList(String userId, String listId) async {
+    final batch = _firestore.batch();
+    
+    // Delete the task list document
+    batch.delete(_firestore.collection('task_lists').doc(listId));
+    
+    // Delete the membership document to trigger stream updates
+    batch.delete(_firestore.collection('memberships').doc('${userId}_$listId'));
+    
+    await batch.commit();
   }
 
   @override

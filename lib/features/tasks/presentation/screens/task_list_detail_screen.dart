@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../data/models/task_list_model.dart';
 import '../../data/models/task_model.dart';
 import '../controllers/task_controller.dart';
 import '../controllers/task_list_controller.dart';
@@ -20,11 +23,10 @@ class TaskListDetailScreen extends ConsumerWidget {
     final tasksAsync = ref.watch(taskControllerProvider(listId));
     final listAsync = ref.watch(taskListControllerProvider);
 
-    final listTitle = listAsync.when(
-      data: (lists) => lists.firstWhere((l) => l.id == listId).title,
-      loading: () => 'Loading...',
-      error: (error, stackTrace) => 'Error',
+    final currentList = listAsync.whenOrNull(
+      data: (lists) => lists.firstWhere((l) => l.id == listId),
     );
+    final listTitle = currentList?.title ?? 'Loading...';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -52,6 +54,37 @@ class TaskListDetailScreen extends ConsumerWidget {
               ),
               icon: const Icon(Icons.share_outlined),
             ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete') {
+                _confirmDeleteList(context, ref, listTitle);
+              } else if (value == 'edit' && currentList != null) {
+                _showEditListDialog(context, ref, currentList);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined),
+                    SizedBox(width: 8),
+                    Text('Edit List'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete List', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -144,6 +177,117 @@ class TaskListDetailScreen extends ConsumerWidget {
       sharePositionOrigin:
           box != null ? box.localToGlobal(Offset.zero) & box.size : null,
     ));
+  }
+
+  void _showEditListDialog(BuildContext context, WidgetRef ref, TaskListModel list) {
+    final controller = TextEditingController(text: list.title);
+    final List<Color> presets = [
+      AppColors.primary,
+      const Color(0xFFE07A5F),
+      const Color(0xFF81B29A),
+      const Color(0xFFF2CC8F),
+      const Color(0xFF3D405B),
+      const Color(0xFFE9C46A),
+    ];
+    Color selectedColor = Color(list.colorValue);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Task List'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'List Title',
+                ),
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.l),
+              Text(
+                'Choose Color',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: AppSpacing.s),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: presets.map((color) {
+                  final isSelected = selectedColor.toARGB32() == color.toARGB32();
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedColor = color),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  ref.read(taskListControllerProvider.notifier).updateTaskList(
+                        list.copyWith(
+                          title: controller.text.trim(),
+                          colorValue: selectedColor.toARGB32(),
+                        ),
+                      );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteList(BuildContext context, WidgetRef ref, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete List?'),
+        content: Text('Are you sure you want to delete "$title"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(taskListControllerProvider.notifier).deleteTaskList(listId);
+              Navigator.pop(context); // Pop dialog
+              Navigator.pop(context); // Pop screen back to Home
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddTaskDialog(BuildContext context, WidgetRef ref) {

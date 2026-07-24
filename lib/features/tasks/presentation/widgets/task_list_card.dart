@@ -9,11 +9,15 @@ import '../controllers/task_list_controller.dart';
 class TaskListCard extends ConsumerWidget {
   final TaskListModel list;
   final VoidCallback onTap;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   const TaskListCard({
     super.key,
     required this.list,
     required this.onTap,
+    this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -94,10 +98,49 @@ class TaskListCard extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.m),
-            Icon(
-              Icons.drag_indicator_rounded,
-              color: color.withValues(alpha: 0.4),
-            ),
+            if (onDelete != null || onEdit != null)
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.more_vert,
+                  color: color.withValues(alpha: 0.6),
+                ),
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    onDelete?.call();
+                  } else if (value == 'edit') {
+                    onEdit?.call();
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (onEdit != null)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined),
+                          SizedBox(width: 8),
+                          Text('Edit List'),
+                        ],
+                      ),
+                    ),
+                  if (onDelete != null)
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete List', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                ],
+              )
+            else
+              Icon(
+                Icons.drag_indicator_rounded,
+                color: color.withValues(alpha: 0.4),
+              ),
           ],
         ),
       ),

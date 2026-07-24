@@ -91,7 +91,10 @@ class TaskListController extends _$TaskListController {
   }
 
   Future<void> deleteTaskList(String listId) async {
-    await ref.read(taskRepositoryProvider).deleteTaskList(listId);
+    final user = ref.read(authStateChangesProvider).value;
+    if (user == null) return;
+    
+    await ref.read(taskRepositoryProvider).deleteTaskList(user.uid, listId);
   }
 
   Future<void> updateTaskList(TaskListModel list) async {

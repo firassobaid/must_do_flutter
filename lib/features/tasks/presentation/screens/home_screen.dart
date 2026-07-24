@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/task_list_model.dart';
 import '../controllers/task_list_controller.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
@@ -115,12 +116,14 @@ class HomeScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final list = lists[index];
                       return TaskListCard(
-                        list: list,
-                        onTap: () {
-                          HapticsUtil.light();
-                          context.push('/list/${list.id}');
-                        },
-                      )
+                      list: list,
+                      onTap: () {
+                        HapticsUtil.light();
+                        context.push('/list/${list.id}');
+                      },
+                      onDelete: () => _confirmDeleteList(context, ref, list),
+                      onEdit: () => _showEditListDialog(context, ref, list),
+                    )
                           // Stagger via Animate.delay (not the effect's delay): the
                           // effect delay is part of the animation's total duration, and
                           // flutter_animate replays from scratch whenever that duration
@@ -162,6 +165,116 @@ class HomeScreen extends ConsumerWidget {
         },
         label: const Text('New List'),
         icon: const Icon(Icons.add_rounded),
+      ),
+    );
+  }
+
+  void _showEditListDialog(BuildContext context, WidgetRef ref, TaskListModel list) {
+    final controller = TextEditingController(text: list.title);
+    final List<Color> presets = [
+      AppColors.primary,
+      const Color(0xFFE07A5F),
+      const Color(0xFF81B29A),
+      const Color(0xFFF2CC8F),
+      const Color(0xFF3D405B),
+      const Color(0xFFE9C46A),
+    ];
+    Color selectedColor = Color(list.colorValue);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Task List'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'List Title',
+                ),
+                autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.l),
+              Text(
+                'Choose Color',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: AppSpacing.s),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: presets.map((color) {
+                  final isSelected = selectedColor.toARGB32() == color.toARGB32();
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedColor = color),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  ref.read(taskListControllerProvider.notifier).updateTaskList(
+                        list.copyWith(
+                          title: controller.text.trim(),
+                          colorValue: selectedColor.toARGB32(),
+                        ),
+                      );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteList(BuildContext context, WidgetRef ref, TaskListModel list) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete List?'),
+        content: Text('Are you sure you want to delete "${list.title}"? This will delete all tasks within it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(taskListControllerProvider.notifier).deleteTaskList(list.id);
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

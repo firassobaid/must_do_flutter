@@ -10,7 +10,7 @@ abstract class TaskRepository {
   
   Future<void> updateTaskList(TaskListModel list);
   
-  Future<void> deleteTaskList(String listId);
+  Future<void> deleteTaskList(String userId, String listId);
   
   Future<void> reorderTaskLists(List<TaskListModel> lists);
   
