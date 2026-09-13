@@ -23,9 +23,13 @@ service cloud.firestore {
     }
 
     match /memberships/{membershipId} {
-      // Queried with where('userId', '==', uid), so read must be provable
-      // from the query filter.
-      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      // Queried with where('userId', '==', uid) (own memberships, e.g. to
+      // find "my lists") or where('listId', '==', listId) (a list's full
+      // member roster, for the members screen). Read must be provable from
+      // either query filter: it's your own row, or you're a member of the
+      // same list the row belongs to.
+      allow read: if signedIn() &&
+          (resource.data.userId == request.auth.uid || isMember(resource.data.listId));
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
