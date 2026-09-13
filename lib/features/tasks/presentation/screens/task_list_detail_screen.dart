@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -33,6 +34,11 @@ class TaskListDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(listTitle),
         actions: [
+          IconButton(
+            tooltip: 'Members',
+            onPressed: () => context.push('/list/$listId/members'),
+            icon: const Icon(Icons.people_outline),
+          ),
           IconButton(
             tooltip: 'Invite collaborator',
             onPressed: () => showDialog(
