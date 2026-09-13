@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/authentication/presentation/controllers/auth_controller.dart';
@@ -11,24 +12,45 @@ import '../../features/onboarding/presentation/screens/splash_screen.dart';
 
 part 'app_router.g.dart';
 
-@riverpod
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}
+
+@Riverpod(keepAlive: true)
 GoRouter appRouter(AppRouterRef ref) {
-  final authState = ref.watch(authStateChangesProvider);
+  final refreshListenable = _RouterRefreshNotifier();
+  ref.onDispose(refreshListenable.dispose);
+
+  ref.listen(authStateChangesProvider, (previous, next) {
+    if (previous?.valueOrNull != next.valueOrNull) {
+      refreshListenable.refresh();
+    }
+  });
 
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
-      final isLoggedIn = authState.value != null;
+      final authState = ref.read(authStateChangesProvider);
       final matchedLocation = state.matchedLocation;
 
-      // Allow splash screen to finish
+      // Always allow the splash screen to finish its animation
       if (matchedLocation == '/splash') return null;
 
+      // Wait for the auth state to resolve before redirecting elsewhere
+      if (authState.isLoading) return null;
+
+      final isLoggedIn = authState.valueOrNull != null;
       final isAuthRoute = matchedLocation == '/login' || matchedLocation == '/register';
 
-      if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && isAuthRoute) return '/';
-      
+      if (!isLoggedIn) {
+        return isAuthRoute ? null : '/login';
+      }
+
+      if (isAuthRoute) {
+        return '/';
+      }
+
       return null;
     },
     routes: [

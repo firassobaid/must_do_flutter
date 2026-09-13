@@ -18,11 +18,15 @@ class MustDoApp extends ConsumerWidget {
     // Listen to auth changes to update FCM token
     ref.listen(authStateChangesProvider, (previous, next) async {
       final user = next.value;
-      if (user != null) {
+      if (user == null) return;
+      // Best effort: a failed token sync must never surface as an app level crash.
+      try {
         final token = await ref.read(notificationServiceProvider.notifier).getToken();
         if (token != null) {
           await ref.read(authRepositoryProvider).updateFCMToken(user.uid, token);
         }
+      } catch (e) {
+        debugPrint('Failed to sync FCM token: $e');
       }
     });
 

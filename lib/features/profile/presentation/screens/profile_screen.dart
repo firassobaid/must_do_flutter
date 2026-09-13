@@ -19,7 +19,9 @@ class ProfileScreen extends ConsumerWidget {
       ),
       body: profileAsync.when(
         data: (user) {
-          if (user == null) return const Center(child: Text('User not found'));
+          if (user == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
           
           return Padding(
             padding: const EdgeInsets.all(24.0),
