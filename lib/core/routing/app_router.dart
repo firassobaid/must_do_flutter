@@ -8,6 +8,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/tasks/presentation/screens/home_screen.dart';
 import '../../features/tasks/presentation/screens/task_list_detail_screen.dart';
 import '../../features/sharing/presentation/screens/invitations_screen.dart';
+import '../../features/sharing/presentation/screens/members_screen.dart';
 import '../../features/onboarding/presentation/screens/splash_screen.dart';
 
 part 'app_router.g.dart';
@@ -83,6 +84,13 @@ GoRouter appRouter(AppRouterRef ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return TaskListDetailScreen(listId: id);
+        },
+      ),
+      GoRoute(
+        path: '/list/:id/members',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return MembersScreen(listId: id);
         },
       ),
     ],
