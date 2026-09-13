@@ -31,21 +31,31 @@ class SharingRepositoryImpl implements SharingRepository {
   @override
   Future<void> respondToInvitation(InvitationModel invitation, InvitationStatus response) async {
     final batch = _firestore.batch();
-    
+
     // Update invitation status
     final invitationRef = _firestore.collection('invitations').doc(invitation.id);
     batch.update(invitationRef, {'status': response.name});
-    
+
     if (response == InvitationStatus.accepted) {
       // Find the user ID based on email (or wait until they accept)
       // For simplicity in this demo, we assume the user accepting is the receiver.
       // In production, you might need a lookup for uid by email.
       // We'll use a placeholder or the current user's uid in the controller.
     }
-    
+
     await batch.commit();
   }
-  
+
+  @override
+  Stream<List<String>> watchMemberUserIds(String listId) {
+    return _firestore
+        .collection('memberships')
+        .where('listId', isEqualTo: listId)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => doc.data()['userId'] as String).toList());
+  }
+
   // Helper for actual membership creation when accepted
   Future<void> createMembership(String userId, String listId) async {
     await _firestore.collection('memberships').doc('${userId}_$listId').set({
