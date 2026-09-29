@@ -6,12 +6,14 @@ class TaskListItem extends StatelessWidget {
   final TaskModel task;
   final Function(bool?) onToggle;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const TaskListItem({
     super.key,
     required this.task,
     required this.onToggle,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -23,6 +25,7 @@ class TaskListItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
+        onTap: onEdit,
         leading: Transform.scale(
           scale: 1.2,
           child: Checkbox(

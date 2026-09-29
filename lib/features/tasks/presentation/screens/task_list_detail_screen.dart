@@ -43,21 +43,16 @@ class TaskListDetailScreen extends ConsumerWidget {
             tooltip: 'Invite collaborator',
             onPressed: () => showDialog(
               context: context,
-              builder: (context) => ShareListDialog(
-                listId: listId,
-                listTitle: listTitle,
-              ),
+              builder: (context) =>
+                  ShareListDialog(listId: listId, listTitle: listTitle),
             ),
             icon: const Icon(Icons.person_add_alt_1_outlined),
           ),
           Builder(
             builder: (iconContext) => IconButton(
               tooltip: 'Share',
-              onPressed: () => _shareList(
-                iconContext,
-                listTitle,
-                tasksAsync.value ?? [],
-              ),
+              onPressed: () =>
+                  _shareList(iconContext, listTitle, tasksAsync.value ?? []),
               icon: const Icon(Icons.share_outlined),
             ),
           ),
@@ -94,64 +89,75 @@ class TaskListDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          const SyncIndicator(),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => ref.refresh(taskControllerProvider(listId).future),
-              child: tasksAsync.when(
-                data: (tasks) {
-                  if (tasks.isEmpty) {
-                    return ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.7,
-                          child: const Center(child: Text('No tasks in this list.')),
-                        ),
-                      ],
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            const SyncIndicator(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    ref.refresh(taskControllerProvider(listId).future),
+                child: tasksAsync.when(
+                  data: (tasks) {
+                    if (tasks.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.7,
+                            child: const Center(
+                              child: Text('No tasks in this list.'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: tasks.length,
+                      itemBuilder: (context, index) {
+                        final task = tasks[index];
+                        return TaskListItem(
+                              task: task,
+                              onToggle: (_) => ref
+                                  .read(taskControllerProvider(listId).notifier)
+                                  .toggleTask(listId, task),
+                              onDelete: () => ref
+                                  .read(taskControllerProvider(listId).notifier)
+                                  .deleteTask(listId, task.id),
+                              onEdit: () =>
+                                  _showEditTaskDialog(context, ref, task),
+                            )
+                            .animate()
+                            .fadeIn(delay: (index * 50).ms)
+                            .slideX(begin: 0.1, end: 0);
+                      },
                     );
-                  }
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = tasks[index];
-                      return TaskListItem(
-                        task: task,
-                        onToggle: (_) => ref
-                            .read(taskControllerProvider(listId).notifier)
-                            .toggleTask(listId, task),
-                        onDelete: () => ref
-                            .read(taskControllerProvider(listId).notifier)
-                            .deleteTask(listId, task.id),
-                      ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: 0.1, end: 0);
-                    },
-                  );
-                },
-                loading: () => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.7,
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                  ],
-                ),
-                error: (err, stack) => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.7,
-                      child: Center(child: Text('Error: $err')),
-                    ),
-                  ],
+                  },
+                  loading: () => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                    ],
+                  ),
+                  error: (err, stack) => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: Center(child: Text('Error: $err')),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -164,7 +170,11 @@ class TaskListDetailScreen extends ConsumerWidget {
   }
 
   /// Opens the platform share sheet with the list rendered as text.
-  void _shareList(BuildContext context, String listTitle, List<TaskModel> tasks) {
+  void _shareList(
+    BuildContext context,
+    String listTitle,
+    List<TaskModel> tasks,
+  ) {
     final buffer = StringBuffer('📝 $listTitle\n\n');
     if (tasks.isEmpty) {
       buffer.writeln('(no tasks yet)');
@@ -177,15 +187,22 @@ class TaskListDetailScreen extends ConsumerWidget {
 
     // Anchor for the iPad share popover.
     final box = context.findRenderObject() as RenderBox?;
-    SharePlus.instance.share(ShareParams(
-      text: buffer.toString(),
-      subject: listTitle,
-      sharePositionOrigin:
-          box != null ? box.localToGlobal(Offset.zero) & box.size : null,
-    ));
+    SharePlus.instance.share(
+      ShareParams(
+        text: buffer.toString(),
+        subject: listTitle,
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      ),
+    );
   }
 
-  void _showEditListDialog(BuildContext context, WidgetRef ref, TaskListModel list) {
+  void _showEditListDialog(
+    BuildContext context,
+    WidgetRef ref,
+    TaskListModel list,
+  ) {
     final controller = TextEditingController(text: list.title);
     final List<Color> presets = [
       AppColors.primary,
@@ -208,9 +225,7 @@ class TaskListDetailScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  labelText: 'List Title',
-                ),
+                decoration: const InputDecoration(labelText: 'List Title'),
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
               ),
@@ -224,7 +239,8 @@ class TaskListDetailScreen extends ConsumerWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: presets.map((color) {
-                  final isSelected = selectedColor.toARGB32() == color.toARGB32();
+                  final isSelected =
+                      selectedColor.toARGB32() == color.toARGB32();
                   return GestureDetector(
                     onTap: () => setState(() => selectedColor = color),
                     child: Container(
@@ -234,11 +250,18 @@ class TaskListDetailScreen extends ConsumerWidget {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected
-                            ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                width: 2,
+                              )
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );
@@ -254,7 +277,9 @@ class TaskListDetailScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (controller.text.isNotEmpty) {
-                  ref.read(taskListControllerProvider.notifier).updateTaskList(
+                  ref
+                      .read(taskListControllerProvider.notifier)
+                      .updateTaskList(
                         list.copyWith(
                           title: controller.text.trim(),
                           colorValue: selectedColor.toARGB32(),
@@ -276,7 +301,9 @@ class TaskListDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete List?'),
-        content: Text('Are you sure you want to delete "$title"? This action cannot be undone.'),
+        content: Text(
+          'Are you sure you want to delete "$title"? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -284,12 +311,73 @@ class TaskListDetailScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(taskListControllerProvider.notifier).deleteTaskList(listId);
+              ref
+                  .read(taskListControllerProvider.notifier)
+                  .deleteTaskList(listId);
               Navigator.pop(context); // Pop dialog
               Navigator.pop(context); // Pop screen back to Home
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTaskDialog(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+  ) {
+    final titleController = TextEditingController(text: task.title);
+    final descriptionController = TextEditingController(
+      text: task.description ?? '',
+    );
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Task'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: 'Title'),
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: AppSpacing.m),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(labelText: 'Description'),
+              textCapitalization: TextCapitalization.sentences,
+              minLines: 1,
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.isNotEmpty) {
+                ref
+                    .read(taskControllerProvider(listId).notifier)
+                    .updateTask(
+                      listId,
+                      task.copyWith(
+                        title: titleController.text.trim(),
+                        description: descriptionController.text.trim(),
+                      ),
+                    );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),

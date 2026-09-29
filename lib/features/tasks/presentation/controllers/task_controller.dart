@@ -41,4 +41,9 @@ class TaskController extends _$TaskController {
   Future<void> deleteTask(String listId, String taskId) async {
     await ref.read(taskRepositoryProvider).deleteTask(listId, taskId);
   }
+
+  Future<void> updateTask(String listId, TaskModel task) async {
+    final updatedTask = task.copyWith(updatedAt: DateTime.now());
+    await ref.read(taskRepositoryProvider).updateTask(listId, updatedTask);
+  }
 }
