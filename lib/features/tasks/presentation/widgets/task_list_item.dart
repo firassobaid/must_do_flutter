@@ -20,53 +20,56 @@ class TaskListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        onTap: onEdit,
-        leading: Transform.scale(
-          scale: 1.2,
-          child: Checkbox(
-            value: task.isDone,
-            onChanged: (val) {
-              HapticsUtil.light();
-              onToggle(val);
-            },
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            activeColor: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        title: Text(
-          task.title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                decoration: task.isDone ? TextDecoration.lineThrough : null,
-                color: task.isDone 
-                    ? Theme.of(context).colorScheme.onSurfaceVariant 
-                    : Theme.of(context).colorScheme.onSurface,
+        child: ListTile(
+          onTap: onEdit,
+          leading: Transform.scale(
+            scale: 1.2,
+            child: Checkbox(
+              value: task.isDone,
+              onChanged: (val) {
+                HapticsUtil.light();
+                onToggle(val);
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
               ),
-        ),
-        subtitle: task.description != null && task.description!.isNotEmpty
-            ? Text(
-                task.description!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              )
-            : null,
-        trailing: IconButton(
-          icon: Icon(
-            Icons.delete_outline, 
-            size: 20, 
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+              activeColor: Theme.of(context).colorScheme.primary,
+            ),
           ),
-          onPressed: () {
-            HapticsUtil.medium();
-            onDelete();
-          },
+          title: Text(
+            task.title,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              decoration: task.isDone ? TextDecoration.lineThrough : null,
+              color: task.isDone
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          subtitle: task.description != null && task.description!.isNotEmpty
+              ? Text(
+                  task.description!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              : null,
+          trailing: IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () {
+              HapticsUtil.medium();
+              onDelete();
+            },
+          ),
         ),
       ),
     );

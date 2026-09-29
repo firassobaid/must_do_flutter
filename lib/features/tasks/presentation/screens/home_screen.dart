@@ -21,16 +21,13 @@ class HomeScreen extends ConsumerWidget {
     final taskListsAsync = ref.watch(taskListControllerProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'assets/branding/logo.png',
-              width: 32,
-              height: 32,
-            ),
+            Image.asset('assets/branding/logo.png', width: 32, height: 32),
             const SizedBox(width: AppSpacing.s),
             const Text('My Space'),
           ],
@@ -71,7 +68,12 @@ class HomeScreen extends ConsumerWidget {
         children: [
           const SyncIndicator(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.m, AppSpacing.m, AppSpacing.m, AppSpacing.xs),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.m,
+              AppSpacing.m,
+              AppSpacing.m,
+              AppSpacing.xs,
+            ),
             child: Text(
               'Your Lists',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -90,24 +92,25 @@ class HomeScreen extends ConsumerWidget {
                     itemCount: lists.length,
                     onReorderItem: (fromIndex, toIndex) {
                       HapticsUtil.medium();
-                      ref.read(taskListControllerProvider.notifier).reorder(fromIndex, toIndex);
+                      ref
+                          .read(taskListControllerProvider.notifier)
+                          .reorder(fromIndex, toIndex);
                     },
                     proxyDecorator: (child, index, animation) {
                       return AnimatedBuilder(
                         animation: animation,
                         builder: (context, child) {
-                          final animValue = Curves.easeInOut.transform(animation.value);
+                          final animValue = Curves.easeInOut.transform(
+                            animation.value,
+                          );
                           final elevation = lerpDouble(0, 8, animValue)!;
                           final scale = lerpDouble(1, 1.02, animValue)!;
-                          
+
                           return Material(
                             elevation: elevation,
                             color: Colors.transparent,
                             borderRadius: BorderRadius.circular(24),
-                            child: Transform.scale(
-                              scale: scale,
-                              child: child,
-                            ),
+                            child: Transform.scale(scale: scale, child: child),
                           );
                         },
                         child: child,
@@ -116,20 +119,25 @@ class HomeScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final list = lists[index];
                       return TaskListCard(
-                      list: list,
-                      onTap: () {
-                        HapticsUtil.light();
-                        context.push('/list/${list.id}');
-                      },
-                      onDelete: () => _confirmDeleteList(context, ref, list),
-                      onEdit: () => _showEditListDialog(context, ref, list),
-                    )
+                            list: list,
+                            onTap: () {
+                              HapticsUtil.light();
+                              context.push('/list/${list.id}');
+                            },
+                            onDelete: () =>
+                                _confirmDeleteList(context, ref, list),
+                            onEdit: () =>
+                                _showEditListDialog(context, ref, list),
+                          )
                           // Stagger via Animate.delay (not the effect's delay): the
                           // effect delay is part of the animation's total duration, and
                           // flutter_animate replays from scratch whenever that duration
                           // changes — which happens for every shifted item after a
                           // reorder, flashing the whole list.
-                          .animate(key: ValueKey(list.id), delay: (index * 50).ms)
+                          .animate(
+                            key: ValueKey(list.id),
+                            delay: (index * 50).ms,
+                          )
                           .fadeIn()
                           .slideX(begin: 0.05, end: 0);
                     },
@@ -169,8 +177,13 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditListDialog(BuildContext context, WidgetRef ref, TaskListModel list) {
+  void _showEditListDialog(
+    BuildContext context,
+    WidgetRef ref,
+    TaskListModel list,
+  ) {
     final controller = TextEditingController(text: list.title);
+    final focusNode = FocusNode();
     final List<Color> presets = [
       AppColors.primary,
       const Color(0xFFE07A5F),
@@ -192,10 +205,8 @@ class HomeScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: controller,
-                decoration: const InputDecoration(
-                  labelText: 'List Title',
-                ),
-                autofocus: true,
+                focusNode: focusNode,
+                decoration: const InputDecoration(labelText: 'List Title'),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSpacing.l),
@@ -208,7 +219,8 @@ class HomeScreen extends ConsumerWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: presets.map((color) {
-                  final isSelected = selectedColor.toARGB32() == color.toARGB32();
+                  final isSelected =
+                      selectedColor.toARGB32() == color.toARGB32();
                   return GestureDetector(
                     onTap: () => setState(() => selectedColor = color),
                     child: Container(
@@ -218,11 +230,18 @@ class HomeScreen extends ConsumerWidget {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected
-                            ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                width: 2,
+                              )
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );
@@ -238,7 +257,9 @@ class HomeScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (controller.text.isNotEmpty) {
-                  ref.read(taskListControllerProvider.notifier).updateTaskList(
+                  ref
+                      .read(taskListControllerProvider.notifier)
+                      .updateTaskList(
                         list.copyWith(
                           title: controller.text.trim(),
                           colorValue: selectedColor.toARGB32(),
@@ -253,14 +274,21 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+    Future.delayed(const Duration(milliseconds: 200), focusNode.requestFocus);
   }
 
-  void _confirmDeleteList(BuildContext context, WidgetRef ref, TaskListModel list) {
+  void _confirmDeleteList(
+    BuildContext context,
+    WidgetRef ref,
+    TaskListModel list,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete List?'),
-        content: Text('Are you sure you want to delete "${list.title}"? This will delete all tasks within it.'),
+        content: Text(
+          'Are you sure you want to delete "${list.title}"? This will delete all tasks within it.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -268,7 +296,9 @@ class HomeScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(taskListControllerProvider.notifier).deleteTaskList(list.id);
+              ref
+                  .read(taskListControllerProvider.notifier)
+                  .deleteTaskList(list.id);
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -286,25 +316,28 @@ class HomeScreen extends ConsumerWidget {
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.task_alt,
-                  size: 100,
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'No task lists yet.',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                const Text('Tap "+" to create your first one.'),
-              ],
-            ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
+            child:
+                Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.task_alt,
+                          size: 100,
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'No task lists yet.',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Tap "+" to create your first one.'),
+                      ],
+                    )
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(begin: const Offset(0.8, 0.8)),
           ),
         ),
       ],
@@ -313,6 +346,7 @@ class HomeScreen extends ConsumerWidget {
 
   void _showCreateListDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final focusNode = FocusNode();
     final List<Color> presets = [
       AppColors.primary,
       const Color(0xFFE07A5F), // Terracotta
@@ -334,11 +368,11 @@ class HomeScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: controller,
+                focusNode: focusNode,
                 decoration: const InputDecoration(
                   hintText: 'e.g., Grocery, Work, Home',
                   labelText: 'List Title',
                 ),
-                autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSpacing.l),
@@ -361,7 +395,10 @@ class HomeScreen extends ConsumerWidget {
                         color: color,
                         shape: BoxShape.circle,
                         border: isSelected
-                            ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2)
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                width: 2,
+                              )
                             : null,
                         boxShadow: isSelected
                             ? [
@@ -369,12 +406,16 @@ class HomeScreen extends ConsumerWidget {
                                   color: color.withValues(alpha: 0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
-                                )
+                                ),
                               ]
                             : null,
                       ),
                       child: isSelected
-                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 20,
+                            )
                           : null,
                     ),
                   );
@@ -390,7 +431,9 @@ class HomeScreen extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (controller.text.isNotEmpty) {
-                  ref.read(taskListControllerProvider.notifier).createTaskList(
+                  ref
+                      .read(taskListControllerProvider.notifier)
+                      .createTaskList(
                         controller.text.trim(),
                         selectedColor.toARGB32(),
                       );
@@ -403,5 +446,6 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+    Future.delayed(const Duration(milliseconds: 200), focusNode.requestFocus);
   }
 }

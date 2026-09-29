@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/share_controller.dart';
 import '../../../../core/constants/app_colors.dart';
 
-class ShareListDialog extends ConsumerWidget {
+class ShareListDialog extends ConsumerStatefulWidget {
   final String listId;
   final String listTitle;
 
@@ -14,20 +14,42 @@ class ShareListDialog extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
+  ConsumerState<ShareListDialog> createState() => _ShareListDialogState();
+}
+
+class _ShareListDialogState extends ConsumerState<ShareListDialog> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Focus after the dialog's entrance transition finishes, so it doesn't
+    // animate at the same time as the keyboard sliding in.
+    Future.delayed(const Duration(milliseconds: 200), _focusNode.requestFocus);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final shareState = ref.watch(shareControllerProvider);
 
     ref.listen(shareControllerProvider, (previous, next) {
       if (next is AsyncData) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invitation sent!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invitation sent!')));
       } else if (next is AsyncError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${next.error}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${next.error}')));
       }
     });
 
@@ -36,16 +58,18 @@ class ShareListDialog extends ConsumerWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Share this list with someone else via their email address.'),
+          const Text(
+            'Share this list with someone else via their email address.',
+          ),
           const SizedBox(height: 16),
           TextField(
-            controller: controller,
+            controller: _controller,
+            focusNode: _focusNode,
             decoration: const InputDecoration(
               hintText: 'Email address',
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.emailAddress,
-            autofocus: true,
           ),
         ],
       ),
@@ -58,11 +82,13 @@ class ShareListDialog extends ConsumerWidget {
           onPressed: shareState.isLoading
               ? null
               : () {
-                  if (controller.text.isNotEmpty) {
-                    ref.read(shareControllerProvider.notifier).sendInvitation(
-                          receiverEmail: controller.text.trim(),
-                          listId: listId,
-                          listTitle: listTitle,
+                  if (_controller.text.isNotEmpty) {
+                    ref
+                        .read(shareControllerProvider.notifier)
+                        .sendInvitation(
+                          receiverEmail: _controller.text.trim(),
+                          listId: widget.listId,
+                          listTitle: widget.listTitle,
                         );
                   }
                 },
@@ -74,7 +100,10 @@ class ShareListDialog extends ConsumerWidget {
               ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Text('Send Invite'),
         ),

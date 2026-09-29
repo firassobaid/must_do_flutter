@@ -30,6 +30,7 @@ class TaskListDetailScreen extends ConsumerWidget {
     final listTitle = currentList?.title ?? 'Loading...';
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(listTitle),
@@ -204,6 +205,7 @@ class TaskListDetailScreen extends ConsumerWidget {
     TaskListModel list,
   ) {
     final controller = TextEditingController(text: list.title);
+    final focusNode = FocusNode();
     final List<Color> presets = [
       AppColors.primary,
       const Color(0xFFE07A5F),
@@ -225,8 +227,8 @@ class TaskListDetailScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: controller,
+                focusNode: focusNode,
                 decoration: const InputDecoration(labelText: 'List Title'),
-                autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSpacing.l),
@@ -294,6 +296,7 @@ class TaskListDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+    Future.delayed(const Duration(milliseconds: 200), focusNode.requestFocus);
   }
 
   void _confirmDeleteList(BuildContext context, WidgetRef ref, String title) {
@@ -334,6 +337,7 @@ class TaskListDetailScreen extends ConsumerWidget {
     final descriptionController = TextEditingController(
       text: task.description ?? '',
     );
+    final focusNode = FocusNode();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -343,8 +347,8 @@ class TaskListDetailScreen extends ConsumerWidget {
           children: [
             TextField(
               controller: titleController,
+              focusNode: focusNode,
               decoration: const InputDecoration(labelText: 'Title'),
-              autofocus: true,
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: AppSpacing.m),
@@ -382,18 +386,20 @@ class TaskListDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+    Future.delayed(const Duration(milliseconds: 200), focusNode.requestFocus);
   }
 
   void _showAddTaskDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
+    final focusNode = FocusNode();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Task'),
         content: TextField(
           controller: controller,
+          focusNode: focusNode,
           decoration: const InputDecoration(hintText: 'What needs to be done?'),
-          autofocus: true,
         ),
         actions: [
           TextButton(
@@ -414,5 +420,8 @@ class TaskListDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+    // Focus after the dialog's entrance transition finishes, so it doesn't
+    // animate at the same time as the keyboard sliding in.
+    Future.delayed(const Duration(milliseconds: 200), focusNode.requestFocus);
   }
 }
